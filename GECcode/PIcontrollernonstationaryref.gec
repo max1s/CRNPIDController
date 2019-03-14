@@ -1,0 +1,128 @@
+directive sample 150.0 10000
+directive simulation deterministicstiff
+directive plot  cp--cm;P
+//directive plot cp; sp
+
+rate signal = 0.01;
+
+
+//rate for integral component
+rate integral = 1;
+
+//rate for productsum components
+rate productSum = 1;
+
+//multipliers..think of these as dials
+rate Psum = 0.8;
+rate Isum = 0.3;
+rate PIsum = 1.1;
+
+//rate of copying 
+rate cp = 100;
+
+init derivtp 0 |
+init derivtm 0|
+
+init derivOm 0|
+init derivOp 0| 
+
+init cp 10 |
+init sp 0 |
+init sm 0 |
+init cm 0 |
+init yp 10 |
+init constantp 10 |
+
+//rate r = 1.0;
+//rate s = 1.0;
+//rate rxs = 1;
+//rate ip = 1.0;
+init sumyp 0|
+init sumym 0|
+//init cp 1000 |
+init sp 0 |
+init sm 0 |
+init cm 0 |
+init intyp 0|
+init intym 0|
+
+init am 0.5|
+init ap 0.5|
+init bm 0.5|
+init bp 0.5|
+init smm 0 |
+init spp 0 |
+init K 0|
+init P 1|
+
+init ssp 0 |
+init ssm 0 |
+
+
+//yp ->{signal} yp + ssp |
+//cm ->{signal} cm + ssm |
+//ssp ->{signal} ssp + cm |
+//ssm ->{signal} ssm + yp |
+//yp + cm ->{signal} |
+//ssp + ssm ->{signal} |
+
+//constantp ->{cp} constantp + cp |
+//yp ->{cp} yp + cp |
+//cp->{cp} |
+
+
+//integration
+sm ->{integral} sm + intym |
+sp ->{integral} sp + intyp |
+intym + intyp ->{integral} |
+
+//Product Summation
+sm ->{productSum} sm + sumym |
+sp ->{productSum} sp + sumyp |
+sumyp ->{productSum} |
+sumym ->{productSum} |
+sumym + sumyp ->{productSum} |
+
+//Weighted Summation integral + sum
+intyp ->{Isum} intyp + sumOnep |
+sumyp ->{Psum}sumyp + sumOnep |
+sumym ->{Psum} sumym + sumOnem |
+intym ->{Isum} intym + sumOnem |
+sumOnep ->{PIsum} |
+sumOnem ->{PIsum} |
+sumOnem + sumOnep ->{PIsum} |
+
+//copy
+sumOnem ->{cp} sumOnem + am |
+sumOnep ->{cp} sumOnep + ap |
+am ->{cp}  |
+ap ->{cp} |
+am + ap ->{cp} |
+
+
+///Needto apply the control to the plant (here I am assuming I can act directly on P)
+ap ->{0.8} ap +  mRNA |
+am ->{0.8} am + microRNA |
+
+///plant (single rail)
+
+->{1} mRNA
+| mRNA ->{1} |
+
+mRNA ->{1} mRNA + P|
+P ->{1} |
+mRNA + microRNA ->{1} |
+
+
+//Need to make the output of the plant dual rail
+P ->{1} P + B + Op  | 
+B ->{1} On |
+Op + On->{1} |
+////NEED to compute error in here
+cp ->{1} cp + sp |
+cm ->{1} cm + sm |
+On ->{1} On + sp |
+Op ->{1} Op + sm |
+sp->{1} |
+sm ->{1} |
+sp + sm ->{1}

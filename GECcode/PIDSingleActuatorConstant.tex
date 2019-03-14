@@ -1,0 +1,145 @@
+directive sample 100.0 10000
+directive simulation deterministicstiff
+directive plot  cp--cm;P
+//directive plot cp; sp
+
+rate signal = 0.01;
+
+//rates  for two derivative components
+rate dvOne = 1;
+rate dvOneX = 10;
+rate dvTwo = 1;
+rate dvTwoX = 10;
+//rate for integral component
+rate integral = 1;
+//rate for productsum components
+rate productSum = 1;
+
+rate Psum = 0.8;
+rate Isum = 0.3;
+rate PIsum=  1.1;
+
+rate Dsum = 0.2;
+rate PIDsum = 1.4;
+
+//rate of copying 
+rate cp = 100;
+
+init derivtp 0 |
+init derivtm 0|
+
+init derivOm 0|
+init derivOp 0| 
+
+init cp 10 |
+init sp 0 |
+init sm 0 |
+init cm 0 |
+init yp 10 |
+init constantp 10 |
+
+//rate r = 1.0;
+//rate s = 1.0;
+//rate rxs = 1;
+//rate ip = 1.0;
+init sumyp 0|
+init sumym 0|
+//init cp 1000 |
+init sp 0 |
+init sm 0 |
+init cm 0 |
+init intyp 0|
+init intym 0|
+
+init am 0.5|
+init ap 0.5|
+init bm 0.5|
+init bp 0.5|
+init smm 0 |
+init spp 0 |
+init K 0|
+init P 1|
+
+init ssp 0 |
+init ssm 0 |
+
+
+
+
+//integration
+sm ->{integral} sm + intym |
+sp ->{integral} sp + intyp |
+intym + intyp ->{integral} |
+
+//Product Summation
+sm ->{productSum} sm + sumym |
+sp ->{productSum} sp + sumyp |
+sumyp ->{productSum} |
+sumym ->{productSum} |
+sumym + sumyp ->{productSum} |
+
+
+sp->{dvTwo} sp + derivttp |
+derivttp ->{dvTwo} |
+sm ->{dvTwo} sm + derivttm |
+derivttm ->{dvTwo} |
+sp ->{dvTwoX} sp + derivOOp |
+derivttm ->{dvTwoX} derivttm + derivOOp | 
+derivOOp ->{dvTwo} | 
+sm ->{dvTwoX} sm + derivOOm |
+derivttp ->{dvTwoX} derivttp + derivOOm |
+derivOOm ->{dvTwo} |
+derivOOp + derivOOm ->{dvTwo} |
+
+//Weighted Summation integral + sum
+intyp ->{Isum} intyp + sumOnep |
+sumyp ->{Psum}sumyp + sumOnep |
+sumym ->{Psum} sumym + sumOnem |
+intym ->{Isum} intym + sumOnem |
+sumOnep ->{PIsum} |
+sumOnem ->{PIsum} |
+sumOnem + sumOnep ->{PIsum} |
+
+//summation derivative + above 
+derivOOp ->{Dsum} derivOOp + sumTwop |
+sumOnep ->{PIsum} sumOnep + sumTwop |
+derivOOm ->{Dsum} derivOOm + sumTwom |
+sumOnem ->{PIsum} sumOnem + sumTwom |
+sumTwop ->{PIDsum} |
+sumTwom ->{PIDsum} |
+sumTwom + sumTwop ->{PIDsum} |
+
+//copy
+sumTwom ->{cp} sumTwom + am |
+sumTwop ->{cp} sumTwop + ap |
+am ->{cp}  |
+ap ->{cp} |
+am + ap ->{cp} |
+
+
+///Needto apply the control to the plant (here I am assuming I can act directly on P)
+ap ->{0.8} ap +  mRNA |
+am + mRNA ->{0.8} am |
+
+///plant (single rail)
+->{1} microRNA
+|->{1} mRNA
+| mRNA ->{1} |
+
+mRNA ->{1} mRNA + P|
+P ->{1} |
+mRNA + microRNA ->{1} |
+
+
+//Need to make the output of the plant dual rail
+P ->{1} P + B + Op  | 
+B ->{1} On |
+Op + On->{1} |
+////NEED to compute error in here
+cp ->{1} cp + sp |
+cm ->{1} cm + sm |
+On ->{1} On + sp |
+Op ->{1} Op + sm |
+sp->{1} |
+sm ->{1} |
+sp + sm ->{1}
